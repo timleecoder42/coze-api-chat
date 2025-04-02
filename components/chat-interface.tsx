@@ -81,6 +81,7 @@ export default function ChatInterface() {
               (msg.role === 'assistant' && msg.type === 'answer')
           )
           .map((msg) => ({
+            id: msg.id,
             role: msg.role as 'user' | 'assistant',
             content: msg.content,
           }))
@@ -91,6 +92,7 @@ export default function ChatInterface() {
               result.messages.find((m) => m.id === a.id)?.created_at || 0;
             const timeB =
               result.messages.find((m) => m.id === b.id)?.created_at || 0;
+
             return timeA - timeB;
           });
 
