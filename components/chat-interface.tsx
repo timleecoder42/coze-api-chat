@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, Settings, RefreshCw } from 'lucide-react';
 import ConfigForm from './config-form';
+import ReactMarkdown from 'react-markdown';
 import {
   sendMessageToCoze,
   generateUserId,
@@ -77,21 +78,21 @@ export default function ChatInterface() {
         const historyMessages: Message[] = result.messages
           .filter(
             (msg) =>
-              msg.role === 'user' ||
-              (msg.role === 'assistant' && msg.type === 'answer')
+              msg?.role === 'user' ||
+              (msg?.role === 'assistant' && msg?.type === 'answer')
           )
           .map((msg) => ({
-            id: msg.id,
-            role: msg.role as 'user' | 'assistant',
-            content: msg.content,
+            id: msg?.id,
+            role: msg?.role as 'user' | 'assistant',
+            content: msg?.content || '',
           }))
           // 确保按照正确的时间顺序排序
           .sort((a, b) => {
             // 使用消息的创建时间进行排序
             const timeA =
-              result.messages.find((m) => m.id === a.id)?.created_at || 0;
+              result.messages?.find((m) => m?.id === a.id)?.created_at || 0;
             const timeB =
-              result.messages.find((m) => m.id === b.id)?.created_at || 0;
+              result.messages?.find((m) => m?.id === b.id)?.created_at || 0;
 
             return timeA - timeB;
           });
@@ -287,13 +288,51 @@ export default function ChatInterface() {
               }`}
             >
               <div
-                className={`p-3 rounded-lg max-w-[80%] ${
-                  message.role === 'user'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100'
+                className={`inline-block max-w-full sm:max-w-[80%] ${
+                  message.role === 'user' ? '' : ''
                 }`}
               >
-                {message.content}
+                <div
+                  className={`p-3 rounded-lg break-words whitespace-pre-wrap ${
+                    message.role === 'user'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 prose dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:pl-5 prose-ol:pl-5 prose-li:pl-0 prose-li:my-0.5 overflow-x-auto [&_ul]:mb-1 [&_ol]:mb-1'
+                  }`}
+                >
+                  {message.role === 'user' ? (
+                    message.content
+                  ) : (
+                    <ReactMarkdown
+                      components={{
+                        p: ({ node, ...props }) => {
+                          // 移除空段落，但保持有内容的段落
+                          if (
+                            !props.children ||
+                            (Array.isArray(props.children) &&
+                              props.children.length === 0) ||
+                            props.children === '' ||
+                            (typeof props.children === 'string' &&
+                              props.children.trim() === '')
+                          ) {
+                            return null;
+                          }
+                          return (
+                            <p
+                              className="my-1 first:mt-0 last:mb-0"
+                              {...props}
+                            />
+                          );
+                        },
+                      }}
+                    >
+                      {/* 先處理換行，再給 Markdown 處理 */}
+                      {message.content
+                        .split('\n')
+                        .filter((line) => line.trim())
+                        .join('\n')}
+                    </ReactMarkdown>
+                  )}
+                </div>
               </div>
             </div>
           ))
